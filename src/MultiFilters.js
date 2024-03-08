@@ -113,17 +113,18 @@ export default function MultiFilters() {
       });
   };
 
-  useEffect(() => {
-    const dataTimer = setInterval(() => {
-      getItems();
-    }, 10000);
-    return () => clearInterval(dataTimer);
-  }, []);
+  // useEffect(() => {
+  //   const dataTimer = setInterval(() => {
+  //     getItems();
+  //   }, 10000);
+  //   return () => clearInterval(dataTimer);
+  // }, []);
 
   const [filteredItems, setFilteredItems] = useState([items]);
 
   useEffect(
     () => {
+      console.log("filter items");
       filterItems();
     },
     // []
@@ -175,8 +176,6 @@ export default function MultiFilters() {
       });
   };
 
-  console.log(items);
-  console.log(filteredItems);
   return (
     <div>
       <div className="wrapper">
