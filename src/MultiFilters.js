@@ -83,8 +83,8 @@ export default function MultiFilters() {
   const [items, setData] = useState("");
 
   // const baseUrl = "https://tabelog.onrender.com/";
-  const baseUrl = "https://tabelog-backend.onrender.com/";
-  // const baseUrl = "http://localhost:5000/";
+  // const baseUrl = "https://tabelog-backend.onrender.com/";
+  const baseUrl = "http://localhost:5000/";
   const sortOptions = ["Ratings Ascending", "Ratings Descending"];
 
   const getItems = () => {
@@ -116,7 +116,7 @@ export default function MultiFilters() {
   useEffect(() => {
     const dataTimer = setInterval(() => {
       getItems();
-    }, 1000);
+    }, 10000);
     return () => clearInterval(dataTimer);
   }, []);
 
@@ -126,27 +126,18 @@ export default function MultiFilters() {
     () => {
       filterItems();
     },
-    []
-    // [storeName, sortValue, ratingRange, reviewRange]
+    // []
+    [storeName, sortValue, ratingRange, reviewRange]
   );
 
   const filterItems = () => {
-    let store_name = storeName === undefined ? "" : storeName;
-    let sort_value = sortValue === undefined ? "Select Sort" : sortValue;
-    let rating_min =
-      ratingRange[0] / 10 === undefined ? 0 : ratingRange[0] / 10;
-    let rating_max =
-      ratingRange[1] / 10 === undefined ? 5 : ratingRange[1] / 10;
-    let review_min = reviewRange[0] === undefined ? 0 : reviewRange[0];
-    let review_max = reviewRange[1] === undefined ? 10000 : reviewRange[1];
-
     console.log(
       "store_name: ",
-      store_name,
+      storeName,
       "sort_value: ",
-      sort_value,
+      sortValue,
       "ratingrange: ",
-      ratingRange[0] / 10,
+      ratingRange,
       "reviewrange: ",
       reviewRange
     );
@@ -154,12 +145,12 @@ export default function MultiFilters() {
     axios
       .get(baseUrl + "restaurants/english", {
         params: {
-          store_name: store_name,
-          sort_value: sort_value,
-          rating_min: rating_min,
-          rating_max: rating_max,
-          review_min: review_min,
-          review_max: review_max,
+          store_name: storeName,
+          sort_value: sortValue,
+          rating_min: ratingRange[0] / 10,
+          rating_max: ratingRange[1] / 10,
+          review_min: reviewRange[0],
+          review_max: reviewRange[1],
         },
       })
       .then((responses) => {
@@ -184,6 +175,8 @@ export default function MultiFilters() {
       });
   };
 
+  console.log(items);
+  console.log(filteredItems);
   return (
     <div>
       <div className="wrapper">
