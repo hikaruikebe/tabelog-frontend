@@ -83,8 +83,8 @@ export default function MultiFilters() {
   const [items, setData] = useState("");
 
   // const baseUrl = "https://tabelog.onrender.com/";
-  // const baseUrl = "https://tabelog-backend.onrender.com/";
-  const baseUrl = "http://localhost:5000/";
+  const baseUrl = "https://tabelog-backend.onrender.com/";
+  // const baseUrl = "http://localhost:5000/";
   const sortOptions = ["Ratings Ascending", "Ratings Descending"];
 
   const getItems = () => {
