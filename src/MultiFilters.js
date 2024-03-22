@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 import axios from "axios";
 import "./style.css";
 import Slider from "react-slider";
@@ -9,55 +10,63 @@ const RATING_MIN = 30;
 const RATING_MAX = 50;
 const REVIEW_MIN = 0;
 const REVIEW_MAX = 5000;
-export const prefectureOptions = {
-  "北海道 (Hokkaido)": "北海道",
-  "青森県 (Aomori)": "青森県",
-  "岩手県 (Iwate)": "岩手県",
-  "宮城県 (Miyagi)": "宮城県",
-  "秋田県 (Akita)": "秋田県",
-  "山形県 (Yamagata)": "山形県",
-  "福島県 (Fukushima)": "福島県",
-  "茨城県 (Ibaraki)": "茨城県",
-  "栃木県 (Tochigi)": "栃木県",
-  "群馬県 (Gunma)": "群馬県",
-  "埼玉県 (Saitama)": "埼玉県",
-  "千葉県 (Ciba)": "千葉県",
-  "東京都 (Tokyo)": "東京都",
-  "神奈川県 (Kanagawa)": "神奈川県",
-  "新潟県 (Niigata)": "新潟県",
-  "富山県 (Toyama)": "富山県",
-  "石川県 (Ishikawa)": "石川県",
-  "福井県 (Fukui)": "福井県",
-  "山梨県 (Yamanashi)": "山梨県",
-  "長野県 (Nagano)": "長野県",
-  "岐阜県 (Gifu)": "岐阜県",
-  "静岡県 (Shizuoka)": "静岡県",
-  "愛知県 (Aichi)": "愛知県",
-  "三重県 (Mie)": "三重県",
-  "滋賀県 (Shiga)": "滋賀県",
-  "京都府 (Kyoto)": "京都府",
-  "大阪府 (Osaka)": "大阪府",
-  "兵庫県 (Hyogo)": "兵庫県",
-  "奈良県 (Nara)": "奈良県",
-  "和歌山県 (Wakayama)": "和歌山県",
-  "鳥取県 (Tottori)": "鳥取県",
-  "島根県 (Shimane)": "島根県",
-  "岡山県 (Okayama)": "岡山県",
-  "広島県 (Hiroshima)": "広島県",
-  "山口県 (Yamaguchi)": "山口県",
-  "徳島県 (Tokushima)": "徳島県",
-  "香川県 (Kagawa)": "香川県",
-  "愛媛県 (Ehime)": "愛媛県",
-  "高知県 (Koci)": "高知県",
-  "福岡県 (Fukuoka)": "福岡県",
-  "佐賀県 (Saga)": "佐賀県",
-  "長崎県 (Nagasaki)": "長崎県",
-  "熊本県 (Kumamoto)": "熊本県",
-  "大分県 (Oita)": "大分県",
-  "宮崎県 (Miyazaki)": "宮崎県",
-  "鹿児島県 (Kagoshima)": "鹿児島県",
-  "沖縄県 (Okinawa)": "沖縄県",
-};
+export const prefectureOptions = [
+  { label: "北海道 (Hokkaido)", value: "北海道" },
+  { label: "青森県 (Aomori)", value: "青森県" },
+  { label: "岩手県 (Iwate)", value: "岩手県" },
+  { label: "宮城県 (Miyagi)", value: "宮城県" },
+  { label: "秋田県 (Akita)", value: "秋田県" },
+  { label: "山形県 (Yamagata)", value: "山形県" },
+  { label: "福島県 (Fukushima)", value: "福島県" },
+  { label: "茨城県 (Ibaraki)", value: "茨城県" },
+  { label: "栃木県 (Tochigi)", value: "栃木県" },
+  { label: "群馬県 (Gunma)", value: "群馬県" },
+  { label: "埼玉県 (Saitama)", value: "埼玉県" },
+  { label: "千葉県 (Ciba)", value: "千葉県" },
+  { label: "東京都 (Tokyo)", value: "東京都" },
+  { label: "神奈川県 (Kanagawa)", value: "神奈川県" },
+  { label: "新潟県 (Niigata)", value: "新潟県" },
+  { label: "富山県 (Toyama)", value: "富山県" },
+  { label: "石川県 (Ishikawa)", value: "石川県" },
+  { label: "福井県 (Fukui)", value: "福井県" },
+  { label: "山梨県 (Yamanashi)", value: "山梨県" },
+  { label: "長野県 (Nagano)", value: "長野県" },
+  { label: "岐阜県 (Gifu)", value: "岐阜県" },
+  { label: "静岡県 (Shizuoka)", value: "静岡県" },
+  { label: "愛知県 (Aichi)", value: "愛知県" },
+  { label: "三重県 (Mie)", value: "三重県" },
+  { label: "滋賀県 (Shiga)", value: "滋賀県" },
+  { label: "京都府 (Kyoto)", value: "京都府" },
+  { label: "大阪府 (Osaka)", value: "大阪府" },
+  { label: "兵庫県 (Hyogo)", value: "兵庫県" },
+  { label: "奈良県 (Nara)", value: "奈良県" },
+  { label: "和歌山県 (Wakayama)", value: "和歌山県" },
+  { label: "鳥取県 (Tottori)", value: "鳥取県" },
+  { label: "島根県 (Shimane)", value: "島根県" },
+  { label: "岡山県 (Okayama)", value: "岡山県" },
+  { label: "広島県 (Hiroshima)", value: "広島県" },
+  { label: "山口県 (Yamaguchi)", value: "山口県" },
+  { label: "徳島県 (Tokushima)", value: "徳島県" },
+  { label: "香川県 (Kagawa)", value: "香川県" },
+  { label: "愛媛県 (Ehime)", value: "愛媛県" },
+  { label: "高知県 (Koci)", value: "高知県" },
+  { label: "福岡県 (Fukuoka)", value: "福岡県" },
+  { label: "佐賀県 (Saga)", value: "佐賀県" },
+  { label: "長崎県 (Nagasaki)", value: "長崎県" },
+  { label: "熊本県 (Kumamoto)", value: "熊本県" },
+  { label: "大分県 (Oita)", value: "大分県" },
+  { label: "宮崎県 (Miyazaki)", value: "宮崎県" },
+  { label: "鹿児島県 (Kagoshima)", value: "鹿児島県" },
+  { label: "沖縄県 (Okinawa)", value: "沖縄県" },
+];
+
+export const sortOptions = [
+  { label: "Random", value: ["score", "random"] },
+  { label: "Ratings Ascending", value: ["score", "ASC"] },
+  { label: "Ratings Descending", value: ["score", "DESC"] },
+];
+
+// export const sortOptions = ["Ratings Ascending", "Ratings Descending"];
 
 // const DropdownMenu = (props) => {
 //   return (
@@ -79,39 +88,38 @@ export default function MultiFilters() {
   const [reviewRange, setReviewRange] = useState([REVIEW_MIN, REVIEW_MAX]);
   const [storeName, setStoreName] = useState("");
   const [sortValue, setSortValue] = useState();
-  // const [prefectureValue, setPrefectureValue] = useState();
+  const [prefectureValue, setPrefectureValue] = useState();
   const [items, setData] = useState("");
 
   // const baseUrl = "https://tabelog.onrender.com/";
   const baseUrl = "https://tabelog-backend.onrender.com/";
   // const baseUrl = "http://localhost:5000/";
-  const sortOptions = ["Ratings Ascending", "Ratings Descending"];
 
-  const getItems = () => {
-    axios
-      .get(`${baseUrl}restaurants/english`)
-      .then((responses) => {
-        setData(
-          responses.data.map((response) => {
-            const container = {};
+  // const getItems = () => {
+  //   axios
+  //     .get(`${baseUrl}restaurants/english`)
+  //     .then((responses) => {
+  //       setData(
+  //         responses.data.map((response) => {
+  //           const container = {};
 
-            container["store_name"] = response.store_name;
-            container["store_name_english"] = response.store_name_english;
-            container["score"] = response.score;
-            container["review_cnt"] = response.review_cnt;
-            container["url"] = response.url;
-            container["url_english"] = response.url_english;
-            container["address"] = response.address;
-            container["address_english"] = response.address_english;
-            container["website"] = response.website;
-            return container;
-          })
-        );
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
+  //           container["store_name"] = response.store_name;
+  //           container["store_name_english"] = response.store_name_english;
+  //           container["score"] = response.score;
+  //           container["review_cnt"] = response.review_cnt;
+  //           container["url"] = response.url;
+  //           container["url_english"] = response.url_english;
+  //           container["address"] = response.address;
+  //           container["address_english"] = response.address_english;
+  //           container["website"] = response.website;
+  //           return container;
+  //         })
+  //       );
+  //     })
+  //     .catch((error) => {
+  //       console.log(error);
+  //     });
+  // };
 
   // useEffect(() => {
   //   const dataTimer = setInterval(() => {
@@ -128,26 +136,32 @@ export default function MultiFilters() {
       filterItems();
     },
     // []
-    [storeName, sortValue, ratingRange, reviewRange]
+    [storeName, sortValue, prefectureValue, ratingRange, reviewRange]
   );
+
+  // const handleChange = (selectedOption) => {
+  //   console.log("handleChange: ", selectedOption);
+  // };
 
   const filterItems = () => {
     console.log(
-      "store_name: ",
-      storeName,
-      "sort_value: ",
-      sortValue,
-      "ratingrange: ",
-      ratingRange,
-      "reviewrange: ",
-      reviewRange
+      `store_name: ${storeName}
+      sort_value: ${sortValue}
+      prefecture_value: ${prefectureValue}
+      ratingrange: ${ratingRange}
+      reviewrange: ${reviewRange}`
     );
+
+    navigator.geolocation.getCurrentPosition((position) => {
+      console.log(position);
+    });
 
     axios
       .get(baseUrl + "restaurants/english", {
         params: {
           store_name: storeName,
           sort_value: sortValue,
+          prefecture_value: prefectureValue,
           rating_min: ratingRange[0] / 10,
           rating_max: ratingRange[1] / 10,
           review_min: reviewRange[0],
@@ -227,27 +241,28 @@ export default function MultiFilters() {
         </div>
       </div>
 
-      <tr>
-        <td size="8">
-          <h2>Sort by</h2>
-          <select
-            className={"sort"}
-            onChange={(e) => setSortValue(e.target.value)}
-            value={sortValue}
-          >
-            <option>Select Sort</option>
-            {sortOptions.map((item, index) => (
-              <option value={item} key={index}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </td>
+      <table>
+        <tbody>
+          <tr>
+            <td size="8" className="sortFilter">
+              <h2>Sort by</h2>
+              <Select
+                options={sortOptions}
+                onChange={(e) => setSortValue(e.value)}
+              />
+            </td>
 
-        <td size="8">
-          <h2>Select Prefecture</h2>
-        </td>
-      </tr>
+            <td size="8" className="prefectureFilter">
+              <h2>Select Prefecture</h2>
+              <Select
+                options={prefectureOptions}
+                onChange={setPrefectureValue}
+                isMulti
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <div className="items-container">
         {filteredItems.map((item, idx) => (
