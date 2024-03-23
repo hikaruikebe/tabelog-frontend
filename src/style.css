@@ -84,12 +84,19 @@ p {
   font-size: 10px;
 }
 
+.budget {
+  color: #64748b;
+  font-size: 10px;
+}
+
 .active {
   background-color: #1e293b;
   color: #fff;
 }
 
 .wrapper {
+  display: flex;
+  flex-wrap: wrap;
   min-height: 10vh;
   display: flex;
   justify-content: center;

@@ -10,6 +10,8 @@ const RATING_MIN = 30;
 const RATING_MAX = 50;
 const REVIEW_MIN = 0;
 const REVIEW_MAX = 5000;
+const BUDGET_MIN = 0;
+const BUDGET_MAX = 50;
 export const prefectureOptions = [
   { label: "北海道 (Hokkaido)", value: "北海道" },
   { label: "青森県 (Aomori)", value: "青森県" },
@@ -64,6 +66,23 @@ export const sortOptions = [
   { label: "Random", value: ["score", "random"] },
   { label: "Ratings Ascending", value: ["score", "ASC"] },
   { label: "Ratings Descending", value: ["score", "DESC"] },
+  {
+    label: "Lunch Budget Ascending",
+    value: ["tabelog_lunch_budget_min", "ASC NULLS LAST"],
+  },
+  {
+    label: "Lunch Budget Descending",
+    value: ["tabelog_lunch_budget_max", "DESC NULLS LAST"],
+  },
+  {
+    label: "Dinner Budget Ascending",
+    value: ["tabelog_dinner_budget_min", "ASC NULLS LAST"],
+  },
+  {
+    label: "Dinner Budget Descending",
+    value: ["tabelog_dinner_budget_max", "DESC NULLS LAST"],
+  },
+  { label: "Closest Distance", value: ["distance", "ASC NULLS LAST"] },
 ];
 
 // export const sortOptions = ["Ratings Ascending", "Ratings Descending"];
@@ -86,14 +105,16 @@ export const sortOptions = [
 export default function MultiFilters() {
   const [ratingRange, setRatingRange] = useState([RATING_MIN, RATING_MAX]);
   const [reviewRange, setReviewRange] = useState([REVIEW_MIN, REVIEW_MAX]);
+  const [lunchRange, setLunchRange] = useState([BUDGET_MIN, BUDGET_MAX]);
+  const [dinnerRange, setDinnerRange] = useState([BUDGET_MIN, BUDGET_MAX]);
   const [storeName, setStoreName] = useState("");
   const [sortValue, setSortValue] = useState();
   const [prefectureValue, setPrefectureValue] = useState();
   const [items, setData] = useState("");
 
+  const baseUrl = "http://localhost:5000/";
   // const baseUrl = "https://tabelog.onrender.com/";
-  const baseUrl = "https://tabelog-backend.onrender.com/";
-  // const baseUrl = "http://localhost:5000/";
+  // const baseUrl = "https://tabelog-backend.onrender.com/";
 
   // const getItems = () => {
   //   axios
@@ -136,14 +157,22 @@ export default function MultiFilters() {
       filterItems();
     },
     // []
-    [storeName, sortValue, prefectureValue, ratingRange, reviewRange]
+    [
+      storeName,
+      sortValue,
+      prefectureValue,
+      ratingRange,
+      reviewRange,
+      lunchRange,
+      dinnerRange,
+    ]
   );
 
   // const handleChange = (selectedOption) => {
   //   console.log("handleChange: ", selectedOption);
   // };
 
-  const filterItems = () => {
+  const filterItems = async () => {
     console.log(
       `store_name: ${storeName}
       sort_value: ${sortValue}
@@ -152,9 +181,32 @@ export default function MultiFilters() {
       reviewrange: ${reviewRange}`
     );
 
-    navigator.geolocation.getCurrentPosition((position) => {
-      console.log(position);
-    });
+    let latitude = 0;
+    let longitude = 0;
+
+    const getCoordinates = async () => {
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        return {
+          longitude: pos.coords.longitude,
+          latitude: pos.coords.latitude,
+        };
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    const coordinates = await getCoordinates();
+    latitude = coordinates.latitude;
+    longitude = coordinates.longitude;
+
+    // temporary coordinates
+    // latitude = 35.606797;
+    // longitude = 139.673123;
+    // console.log(lunchRange, dinnerRange);
 
     axios
       .get(baseUrl + "restaurants/english", {
@@ -166,6 +218,12 @@ export default function MultiFilters() {
           rating_max: ratingRange[1] / 10,
           review_min: reviewRange[0],
           review_max: reviewRange[1],
+          latitude: latitude,
+          longitude: longitude,
+          lunch_min: lunchRange[0],
+          lunch_max: lunchRange[1],
+          dinner_min: dinnerRange[0],
+          dinner_max: dinnerRange[1],
         },
       })
       .then((responses) => {
@@ -177,6 +235,23 @@ export default function MultiFilters() {
             container["store_name_english"] = response.store_name_english;
             container["score"] = response.score;
             container["review_cnt"] = response.review_cnt;
+            container["tabelog_lunch_budget_min"] =
+              response.tabelog_lunch_budget_min;
+            container["tabelog_lunch_budget_max"] =
+              response.tabelog_lunch_budget_max;
+            container["tabelog_dinner_budget_min"] =
+              response.tabelog_dinner_budget_min;
+            container["tabelog_dinner_budget_max"] =
+              response.tabelog_dinner_budget_max;
+            // container["customer_lunch_budget_min"] =
+            //   response.customer_lunch_budget_min;
+            // container["customer_lunch_budget_max"] =
+            //   response.customer_lunch_budget_max;
+            // container["customer_dinner_budget_min"] =
+            //   response.customer_dinner_budget_min;
+            // container["customer_dinner_budget_max"] =
+            //   response.customer_dinner_budget_max;
+            container["distance"] = response.distance;
             container["url"] = response.url;
             container["url_english"] = response.url_english;
             container["address"] = response.address;
@@ -184,6 +259,7 @@ export default function MultiFilters() {
             container["address_english"] = response.address_english;
             container["prefecture_english"] = response.prefecture_english;
             container["website"] = response.website;
+
             return container;
           })
         );
@@ -200,46 +276,107 @@ export default function MultiFilters() {
         ></input>
       </div>
 
-      <div className="wrapper">
-        <div className="box">
-          <h3>
-            Ratings <span>Range</span>
-          </h3>
-          <div>
-            <span className={"value"}>
-              Min Rating: {ratingRange[0] / 10} - Max Rating:{" "}
-              {ratingRange[1] / 10}
-            </span>
-          </div>
+      <table>
+        <tbody>
+          <tr>
+            <td size="8">
+              <div className="wrapper">
+                <div className="box">
+                  <h3>
+                    Ratings <span>Range</span>
+                  </h3>
+                  <div>
+                    <span className={"value"}>
+                      Min Rating: {ratingRange[0] / 10} - Max Rating:{" "}
+                      {ratingRange[1] / 10}
+                    </span>
+                  </div>
 
-          <Slider
-            className={"slider"}
-            onChange={setRatingRange}
-            value={ratingRange}
-            min={RATING_MIN}
-            max={RATING_MAX}
-          />
+                  <Slider
+                    className={"slider"}
+                    onChange={setRatingRange}
+                    value={ratingRange}
+                    min={RATING_MIN}
+                    max={RATING_MAX}
+                  />
+                </div>
+              </div>
+            </td>
 
-          <br></br>
-          <br></br>
-          <h3>
-            Reviews <span>Range</span>
-          </h3>
-          <div>
-            <span className={"value"}>
-              Min Review: {reviewRange[0]} - Max Review: {reviewRange[1]}
-            </span>
-          </div>
+            <td size="8">
+              <div className="wrapper">
+                <div className="box">
+                  <h3>
+                    Reviews <span>Range</span>
+                  </h3>
+                  <div>
+                    <span className={"value"}>
+                      Min Review: {reviewRange[0]} - Max Review:{" "}
+                      {reviewRange[1]}
+                    </span>
+                  </div>
 
-          <Slider
-            className={"slider"}
-            onChange={setReviewRange}
-            value={reviewRange}
-            min={REVIEW_MIN}
-            max={REVIEW_MAX}
-          />
-        </div>
-      </div>
+                  <Slider
+                    className={"slider"}
+                    onChange={setReviewRange}
+                    value={reviewRange}
+                    min={REVIEW_MIN}
+                    max={REVIEW_MAX}
+                  />
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div className="wrapper">
+                <div className="box">
+                  <h3>
+                    Lunch Budget <span>Range</span>
+                  </h3>
+                  <div>
+                    <span className={"value"}>
+                      Min Budget: {lunchRange[0] * 1000} - Max Budget:{" "}
+                      {lunchRange[1] * 1000}
+                    </span>
+                  </div>
+
+                  <Slider
+                    className={"slider"}
+                    onChange={setLunchRange}
+                    value={lunchRange}
+                    min={BUDGET_MIN}
+                    max={BUDGET_MAX}
+                  />
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div className="wrapper">
+                <div className="box">
+                  <h3>
+                    Dinner Budget <span>Range</span>
+                  </h3>
+                  <div>
+                    <span className={"value"}>
+                      Min Budget: {dinnerRange[0] * 1000} - Max Budget:{" "}
+                      {dinnerRange[1] * 1000}
+                    </span>
+                  </div>
+
+                  <Slider
+                    className={"slider"}
+                    onChange={setDinnerRange}
+                    value={dinnerRange}
+                    min={BUDGET_MIN}
+                    max={BUDGET_MAX}
+                  />
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <table>
         <tbody>
@@ -275,7 +412,42 @@ export default function MultiFilters() {
               Prefecture: {item.prefecture} ({item.prefecture_english})
             </p>
             <p className="score">Rating: {item.score}</p>
-            <p className="review_cnt">Reviews: {item.review_cnt}</p>
+            <p className="review_cnt">
+              Reviews: {new Intl.NumberFormat("en-IN").format(item.review_cnt)}
+            </p>
+            <p className="budget">
+              Tabelog Lunch Price:{" "}
+              {`${new Intl.NumberFormat("ja-JP", {
+                style: "currency",
+                currency: "JPY",
+              }).format(
+                item.tabelog_lunch_budget_min
+              )} ~ ${new Intl.NumberFormat("ja-JP", {
+                style: "currency",
+                currency: "JPY",
+              }).format(item.tabelog_lunch_budget_max)}`}
+            </p>
+            <p className="budget">
+              Tabelog Dinner Price:{" "}
+              {`${new Intl.NumberFormat("ja-JP", {
+                style: "currency",
+                currency: "JPY",
+              }).format(
+                item.tabelog_dinner_budget_min
+              )} ~ ${new Intl.NumberFormat("ja-JP", {
+                style: "currency",
+                currency: "JPY",
+              }).format(item.tabelog_dinner_budget_max)}`}
+            </p>
+            <p className="budget">
+              Distance:{" "}
+              {`${new Intl.NumberFormat("en-US", {
+                style: "unit",
+                unit: "kilometer",
+                unitDisplay: "short",
+                maximumFractionDigits: 2,
+              }).format(item.distance)}`}
+            </p>
           </div>
         ))}
       </div>
