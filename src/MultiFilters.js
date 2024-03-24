@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import Select from "react-select";
 import axios from "axios";
 import "./style.css";
@@ -9,9 +9,9 @@ import Slider from "react-slider";
 const RATING_MIN = 30;
 const RATING_MAX = 50;
 const REVIEW_MIN = 0;
-const REVIEW_MAX = 5000;
+const REVIEW_MAX = 6000;
 const BUDGET_MIN = 0;
-const BUDGET_MAX = 50;
+const BUDGET_MAX = 100;
 export const prefectureOptions = [
   { label: "北海道 (Hokkaido)", value: "北海道" },
   { label: "青森県 (Aomori)", value: "青森県" },
@@ -110,7 +110,27 @@ export default function MultiFilters() {
   const [storeName, setStoreName] = useState("");
   const [sortValue, setSortValue] = useState();
   const [prefectureValue, setPrefectureValue] = useState();
-  const [items, setData] = useState("");
+  const [items, setData] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+
+  const observer = useRef();
+  const lastItemRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        console.log("HasMore: ", hasMore);
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPageNumber) => prevPageNumber + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore]
+  );
 
   const baseUrl = "http://localhost:5000/";
   // const baseUrl = "https://tabelog.onrender.com/";
@@ -149,41 +169,50 @@ export default function MultiFilters() {
   //   return () => clearInterval(dataTimer);
   // }, []);
 
-  const [filteredItems, setFilteredItems] = useState([items]);
+  const [filteredItems, setFilteredItems] = useState([]);
 
-  useEffect(
-    () => {
-      console.log("filter items");
-      filterItems();
-    },
-    // []
-    [
-      storeName,
-      sortValue,
-      prefectureValue,
-      ratingRange,
-      reviewRange,
-      lunchRange,
-      dinnerRange,
-    ]
-  );
+  useEffect(() => {
+    setFilteredItems([]);
+    setPage(1);
+  }, [
+    storeName,
+    sortValue,
+    prefectureValue,
+    ratingRange,
+    reviewRange,
+    lunchRange,
+    dinnerRange,
+  ]);
 
-  // const handleChange = (selectedOption) => {
-  //   console.log("handleChange: ", selectedOption);
-  // };
+  useEffect(() => {
+    filterItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    storeName,
+    sortValue,
+    prefectureValue,
+    ratingRange,
+    reviewRange,
+    lunchRange,
+    dinnerRange,
+    page,
+  ]);
+
+  // useEffect(() => {
+  //   axios.get(baseUrl + "restaurants/english", {});
+  // }, [page]);
 
   const filterItems = async () => {
-    console.log(
-      `store_name: ${storeName}
-      sort_value: ${sortValue}
-      prefecture_value: ${prefectureValue}
-      ratingrange: ${ratingRange}
-      reviewrange: ${reviewRange}`
-    );
+    // console.log(
+    //   `store_name: ${storeName}
+    //   sort_value: ${sortValue}
+    //   prefecture_value: ${prefectureValue}
+    //   ratingrange: ${ratingRange}
+    //   reviewrange: ${reviewRange}`
+    // );
 
     let latitude = 0;
     let longitude = 0;
-
     const getCoordinates = async () => {
       try {
         const pos = await new Promise((resolve, reject) => {
@@ -199,15 +228,18 @@ export default function MultiFilters() {
       }
     };
 
-    const coordinates = await getCoordinates();
-    latitude = coordinates.latitude;
-    longitude = coordinates.longitude;
+    // const coordinates = await getCoordinates();
+    // latitude = coordinates.latitude;
+    // longitude = coordinates.longitude;
 
     // temporary coordinates
-    // latitude = 35.606797;
-    // longitude = 139.673123;
+    latitude = 35.606797;
+    longitude = 139.673123;
     // console.log(lunchRange, dinnerRange);
 
+    setLoading(true);
+    setError(false);
+    let cancel;
     axios
       .get(baseUrl + "restaurants/english", {
         params: {
@@ -224,47 +256,37 @@ export default function MultiFilters() {
           lunch_max: lunchRange[1],
           dinner_min: dinnerRange[0],
           dinner_max: dinnerRange[1],
+          page: page,
+          limit: 12,
         },
+        cancelToken: new axios.CancelToken((c) => (cancel = c)),
       })
       .then((responses) => {
-        setFilteredItems(
-          responses.data.map((response) => {
-            const container = {};
-
-            container["store_name"] = response.store_name;
-            container["store_name_english"] = response.store_name_english;
-            container["score"] = response.score;
-            container["review_cnt"] = response.review_cnt;
-            container["tabelog_lunch_budget_min"] =
-              response.tabelog_lunch_budget_min;
-            container["tabelog_lunch_budget_max"] =
-              response.tabelog_lunch_budget_max;
-            container["tabelog_dinner_budget_min"] =
-              response.tabelog_dinner_budget_min;
-            container["tabelog_dinner_budget_max"] =
-              response.tabelog_dinner_budget_max;
-            // container["customer_lunch_budget_min"] =
-            //   response.customer_lunch_budget_min;
-            // container["customer_lunch_budget_max"] =
-            //   response.customer_lunch_budget_max;
-            // container["customer_dinner_budget_min"] =
-            //   response.customer_dinner_budget_min;
-            // container["customer_dinner_budget_max"] =
-            //   response.customer_dinner_budget_max;
-            container["distance"] = response.distance;
-            container["url"] = response.url;
-            container["url_english"] = response.url_english;
-            container["address"] = response.address;
-            container["prefecture"] = response.prefecture;
-            container["address_english"] = response.address_english;
-            container["prefecture_english"] = response.prefecture_english;
-            container["website"] = response.website;
-
-            return container;
-          })
-        );
+        setFilteredItems((prevItems) => {
+          return [
+            ...new Set([
+              ...prevItems,
+              ...responses.data.map((response) => response),
+            ]),
+          ];
+        });
+        console.log(page, responses.data.length, responses.data.length > 0);
+        setHasMore(responses.data.length > 0);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (axios.isCancel(e)) return;
+        setError(true);
       });
+
+    return () => cancel();
   };
+
+  function handleSearch(e) {
+    setStoreName(e.target.value);
+    setPage(1);
+  }
+  console.log(filteredItems);
 
   return (
     <div>
@@ -272,7 +294,7 @@ export default function MultiFilters() {
         <input
           className="search"
           placeholder="Search..."
-          onChange={(e) => setStoreName(e.target.value)}
+          onChange={(e) => handleSearch(e)}
         ></input>
       </div>
 
@@ -287,8 +309,16 @@ export default function MultiFilters() {
                   </h3>
                   <div>
                     <span className={"value"}>
-                      Min Rating: {ratingRange[0] / 10} - Max Rating:{" "}
-                      {ratingRange[1] / 10}
+                      Min Rating:{" "}
+                      {`${new Intl.NumberFormat("en-IN", {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      }).format(ratingRange[0] / 10)}`}{" "}
+                      - Max Rating:{" "}
+                      {`${new Intl.NumberFormat("en-IN", {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      }).format(ratingRange[1] / 10)}`}
                     </span>
                   </div>
 
@@ -311,8 +341,14 @@ export default function MultiFilters() {
                   </h3>
                   <div>
                     <span className={"value"}>
-                      Min Review: {reviewRange[0]} - Max Review:{" "}
-                      {reviewRange[1]}
+                      Min Review:{" "}
+                      {`${new Intl.NumberFormat("en-IN", {}).format(
+                        reviewRange[0]
+                      )}`}{" "}
+                      - Max Review:{" "}
+                      {`${new Intl.NumberFormat("en-IN", {}).format(
+                        reviewRange[1]
+                      )}`}
                     </span>
                   </div>
 
@@ -335,8 +371,16 @@ export default function MultiFilters() {
                   </h3>
                   <div>
                     <span className={"value"}>
-                      Min Budget: {lunchRange[0] * 1000} - Max Budget:{" "}
-                      {lunchRange[1] * 1000}
+                      Min Budget:
+                      {new Intl.NumberFormat("ja-JP", {
+                        style: "currency",
+                        currency: "JPY",
+                      }).format(lunchRange[0] * 1000)}{" "}
+                      - Max Budget:
+                      {new Intl.NumberFormat("ja-JP", {
+                        style: "currency",
+                        currency: "JPY",
+                      }).format(lunchRange[1] * 1000)}
                     </span>
                   </div>
 
@@ -359,8 +403,16 @@ export default function MultiFilters() {
                   </h3>
                   <div>
                     <span className={"value"}>
-                      Min Budget: {dinnerRange[0] * 1000} - Max Budget:{" "}
-                      {dinnerRange[1] * 1000}
+                      Min Budget:
+                      {new Intl.NumberFormat("ja-JP", {
+                        style: "currency",
+                        currency: "JPY",
+                      }).format(dinnerRange[0] * 1000)}{" "}
+                      - Max Budget:
+                      {new Intl.NumberFormat("ja-JP", {
+                        style: "currency",
+                        currency: "JPY",
+                      }).format(dinnerRange[1] * 1000)}
                     </span>
                   </div>
 
@@ -402,54 +454,110 @@ export default function MultiFilters() {
       </table>
 
       <div className="items-container">
-        {filteredItems.map((item, idx) => (
-          <div key={`items-${idx}`} className="item">
-            <a target="_blank" rel="noopener noreferrer" href={item.url}>
-              {item.store_name} ({item.store_name_english})
-            </a>
+        {filteredItems.map((item, idx) => {
+          if (item.length === idx + 1) {
+            return (
+              <div ref={lastItemRef} key={`items-${idx}`} className="item">
+                <a target="_blank" rel="noopener noreferrer" href={item.url}>
+                  {item.store_name} ({item.store_name_english})
+                </a>
 
-            <p className="prefecture">
-              Prefecture: {item.prefecture} ({item.prefecture_english})
-            </p>
-            <p className="score">Rating: {item.score}</p>
-            <p className="review_cnt">
-              Reviews: {new Intl.NumberFormat("en-IN").format(item.review_cnt)}
-            </p>
-            <p className="budget">
-              Tabelog Lunch Price:{" "}
-              {`${new Intl.NumberFormat("ja-JP", {
-                style: "currency",
-                currency: "JPY",
-              }).format(
-                item.tabelog_lunch_budget_min
-              )} ~ ${new Intl.NumberFormat("ja-JP", {
-                style: "currency",
-                currency: "JPY",
-              }).format(item.tabelog_lunch_budget_max)}`}
-            </p>
-            <p className="budget">
-              Tabelog Dinner Price:{" "}
-              {`${new Intl.NumberFormat("ja-JP", {
-                style: "currency",
-                currency: "JPY",
-              }).format(
-                item.tabelog_dinner_budget_min
-              )} ~ ${new Intl.NumberFormat("ja-JP", {
-                style: "currency",
-                currency: "JPY",
-              }).format(item.tabelog_dinner_budget_max)}`}
-            </p>
-            <p className="budget">
-              Distance:{" "}
-              {`${new Intl.NumberFormat("en-US", {
-                style: "unit",
-                unit: "kilometer",
-                unitDisplay: "short",
-                maximumFractionDigits: 2,
-              }).format(item.distance)}`}
-            </p>
-          </div>
-        ))}
+                <p className="prefecture">
+                  Prefecture: {item.prefecture} ({item.prefecture_english})
+                </p>
+                <p className="score">Rating: {item.score}</p>
+                <p className="review_cnt">
+                  Reviews:{" "}
+                  {new Intl.NumberFormat("en-IN").format(item.review_cnt)}
+                </p>
+                <p className="budget">
+                  Tabelog Lunch Price:{" "}
+                  {`${new Intl.NumberFormat("ja-JP", {
+                    style: "currency",
+                    currency: "JPY",
+                  }).format(
+                    item.tabelog_lunch_budget_min
+                  )} ~ ${new Intl.NumberFormat("ja-JP", {
+                    style: "currency",
+                    currency: "JPY",
+                  }).format(item.tabelog_lunch_budget_max)}`}
+                </p>
+                <p className="budget">
+                  Tabelog Dinner Price:{" "}
+                  {`${new Intl.NumberFormat("ja-JP", {
+                    style: "currency",
+                    currency: "JPY",
+                  }).format(
+                    item.tabelog_dinner_budget_min
+                  )} ~ ${new Intl.NumberFormat("ja-JP", {
+                    style: "currency",
+                    currency: "JPY",
+                  }).format(item.tabelog_dinner_budget_max)}`}
+                </p>
+                <p className="budget">
+                  Distance:{" "}
+                  {`${new Intl.NumberFormat("en-US", {
+                    style: "unit",
+                    unit: "kilometer",
+                    unitDisplay: "short",
+                    maximumFractionDigits: 2,
+                  }).format(item.distance)}`}
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div ref={lastItemRef} key={`items-${idx}`} className="item">
+              <a target="_blank" rel="noopener noreferrer" href={item.url}>
+                {item.store_name} ({item.store_name_english})
+              </a>
+
+              <p className="prefecture">
+                Prefecture: {item.prefecture} ({item.prefecture_english})
+              </p>
+              <p className="score">Rating: {item.score}</p>
+              <p className="review_cnt">
+                Reviews:{" "}
+                {new Intl.NumberFormat("en-IN").format(item.review_cnt)}
+              </p>
+              <p className="budget">
+                Tabelog Lunch Price:{" "}
+                {`${new Intl.NumberFormat("ja-JP", {
+                  style: "currency",
+                  currency: "JPY",
+                }).format(
+                  item.tabelog_lunch_budget_min
+                )} ~ ${new Intl.NumberFormat("ja-JP", {
+                  style: "currency",
+                  currency: "JPY",
+                }).format(item.tabelog_lunch_budget_max)}`}
+              </p>
+              <p className="budget">
+                Tabelog Dinner Price:{" "}
+                {`${new Intl.NumberFormat("ja-JP", {
+                  style: "currency",
+                  currency: "JPY",
+                }).format(
+                  item.tabelog_dinner_budget_min
+                )} ~ ${new Intl.NumberFormat("ja-JP", {
+                  style: "currency",
+                  currency: "JPY",
+                }).format(item.tabelog_dinner_budget_max)}`}
+              </p>
+              <p className="budget">
+                Distance:{" "}
+                {`${new Intl.NumberFormat("en-US", {
+                  style: "unit",
+                  unit: "kilometer",
+                  unitDisplay: "short",
+                  maximumFractionDigits: 2,
+                }).format(item.distance)}`}
+              </p>
+            </div>
+          );
+        })}
+        <div>{loading && "Loading..."}</div>
+        <div>{error && "ERROR"}</div>
       </div>
     </div>
   );
