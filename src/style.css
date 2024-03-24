@@ -68,6 +68,11 @@ p {
   justify-content: space-between;
 }
 
+.genre {
+  color: #64748b;
+  font-size: 12px;
+}
+
 .prefecture {
   color: #64748b;
   font-size: 12px;
@@ -118,6 +123,11 @@ p {
 }
 
 .prefectureFilter {
+  width: 20%;
+  max-width: 200px;
+}
+
+.genreFilter {
   width: 20%;
   max-width: 200px;
 }
