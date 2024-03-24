@@ -132,9 +132,9 @@ export default function MultiFilters() {
     [loading, hasMore]
   );
 
-  const baseUrl = "http://localhost:5000/";
+  // const baseUrl = "http://localhost:5000/";
   // const baseUrl = "https://tabelog.onrender.com/";
-  // const baseUrl = "https://tabelog-backend.onrender.com/";
+  const baseUrl = "https://tabelog-backend.onrender.com/";
 
   // const getItems = () => {
   //   axios
