@@ -63,8 +63,8 @@ export default function MultiFilters() {
     [loading, hasMore]
   );
 
-  const baseUrl = "http://localhost:5000/";
-  // const baseUrl = "https://tabelog-backend.onrender.com/";
+  // const baseUrl = "http://localhost:5000/";
+  const baseUrl = "https://tabelog-backend.onrender.com/";
 
   const [filteredItems, setFilteredItems] = useState([]);
 
