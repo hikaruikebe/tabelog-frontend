@@ -19,14 +19,29 @@ const BUDGET_MAX = 100;
 
 export default function MultiFilters() {
   const [ratingRange, setRatingRange] = useState([RATING_MIN, RATING_MAX]);
+  const [ratingDisplayRange, setRatingDisplayRange] = useState([
+    RATING_MIN,
+    RATING_MAX,
+  ]);
   const [reviewRange, setReviewRange] = useState([REVIEW_MIN, REVIEW_MAX]);
+  const [reviewDisplayRange, setReviewDisplayRange] = useState([
+    REVIEW_MIN,
+    REVIEW_MAX,
+  ]);
   const [lunchRange, setLunchRange] = useState([BUDGET_MIN, BUDGET_MAX]);
+  const [lunchDisplayRange, setLunchDisplayRange] = useState([
+    BUDGET_MIN,
+    BUDGET_MAX,
+  ]);
   const [dinnerRange, setDinnerRange] = useState([BUDGET_MIN, BUDGET_MAX]);
+  const [dinnerDisplayRange, setDinnerDisplayRange] = useState([
+    BUDGET_MIN,
+    BUDGET_MAX,
+  ]);
   const [storeName, setStoreName] = useState("");
   const [sortValue, setSortValue] = useState();
   const [prefectureValue, setPrefectureValue] = useState();
   const [genreValue, setGenreValue] = useState();
-  const [items, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -48,8 +63,8 @@ export default function MultiFilters() {
     [loading, hasMore]
   );
 
-  // const baseUrl = "http://localhost:5000/";
-  const baseUrl = "https://tabelog-backend.onrender.com/";
+  const baseUrl = "http://localhost:5000/";
+  // const baseUrl = "https://tabelog-backend.onrender.com/";
 
   const [filteredItems, setFilteredItems] = useState([]);
 
@@ -138,7 +153,7 @@ export default function MultiFilters() {
           return [
             ...new Set([
               ...prevItems,
-              ...responses.data.map((response) => response),
+              ...responses.data.map((response) => response).flat(),
             ]),
           ];
         });
@@ -186,18 +201,19 @@ export default function MultiFilters() {
                       {`${new Intl.NumberFormat("en-IN", {
                         minimumFractionDigits: 1,
                         maximumFractionDigits: 1,
-                      }).format(ratingRange[0] / 10)}`}{" "}
+                      }).format(ratingDisplayRange[0] / 10)}`}{" "}
                       - Max Rating:{" "}
                       {`${new Intl.NumberFormat("en-IN", {
                         minimumFractionDigits: 1,
                         maximumFractionDigits: 1,
-                      }).format(ratingRange[1] / 10)}`}
+                      }).format(ratingDisplayRange[1] / 10)}`}
                     </span>
                   </div>
 
                   <Slider
                     className={"slider"}
-                    onChange={setRatingRange}
+                    onChange={setRatingDisplayRange}
+                    onAfterChange={setRatingRange}
                     value={ratingRange}
                     min={RATING_MIN}
                     max={RATING_MAX}
@@ -216,18 +232,19 @@ export default function MultiFilters() {
                     <span className={"value"}>
                       Min Review:{" "}
                       {`${new Intl.NumberFormat("en-IN", {}).format(
-                        reviewRange[0]
+                        reviewDisplayRange[0]
                       )}`}{" "}
                       - Max Review:{" "}
                       {`${new Intl.NumberFormat("en-IN", {}).format(
-                        reviewRange[1]
+                        reviewDisplayRange[1]
                       )}`}
                     </span>
                   </div>
 
                   <Slider
                     className={"slider"}
-                    onChange={setReviewRange}
+                    onChange={setReviewDisplayRange}
+                    onAfterChange={setReviewRange}
                     value={reviewRange}
                     min={REVIEW_MIN}
                     max={REVIEW_MAX}
@@ -248,18 +265,19 @@ export default function MultiFilters() {
                       {new Intl.NumberFormat("ja-JP", {
                         style: "currency",
                         currency: "JPY",
-                      }).format(lunchRange[0] * 1000)}{" "}
+                      }).format(lunchDisplayRange[0] * 1000)}{" "}
                       - Max Budget:
                       {new Intl.NumberFormat("ja-JP", {
                         style: "currency",
                         currency: "JPY",
-                      }).format(lunchRange[1] * 1000)}
+                      }).format(lunchDisplayRange[1] * 1000)}
                     </span>
                   </div>
 
                   <Slider
                     className={"slider"}
-                    onChange={setLunchRange}
+                    onChange={setLunchDisplayRange}
+                    onAfterChange={setLunchRange}
                     value={lunchRange}
                     min={BUDGET_MIN}
                     max={BUDGET_MAX}
@@ -280,18 +298,19 @@ export default function MultiFilters() {
                       {new Intl.NumberFormat("ja-JP", {
                         style: "currency",
                         currency: "JPY",
-                      }).format(dinnerRange[0] * 1000)}{" "}
+                      }).format(dinnerDisplayRange[0] * 1000)}{" "}
                       - Max Budget:
                       {new Intl.NumberFormat("ja-JP", {
                         style: "currency",
                         currency: "JPY",
-                      }).format(dinnerRange[1] * 1000)}
+                      }).format(dinnerDisplayRange[1] * 1000)}
                     </span>
                   </div>
 
                   <Slider
                     className={"slider"}
-                    onChange={setDinnerRange}
+                    onChange={setDinnerDisplayRange}
+                    onAfterChange={setDinnerRange}
                     value={dinnerRange}
                     min={BUDGET_MIN}
                     max={BUDGET_MAX}
